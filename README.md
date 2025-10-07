@@ -1,74 +1,60 @@
-# 🏗️ SQL Real Estate Data Warehouse Project  
+# 🏠 SQL Real Estate Data Warehouse Project  
 
-## 📖 Project Overview  
-This project demonstrates the design and implementation of a **data warehouse for real estate analytics** using SQL and the **Bronze–Silver–Gold architecture**.  
-The objective is to establish a scalable pipeline that transforms raw property, sales, client, and agent data into **clean, relational, and analysis-ready datasets**.  
-
-It provides a solid foundation for **reporting, business intelligence, and performance analytics** in the real estate domain.  
+Welcome to the **SQL Real Estate Data Warehouse Project!** 🚀  
+This project showcases the complete design and implementation of a **modern data warehouse** for real estate analytics — from raw data ingestion to analytical modeling and reporting.  
+It demonstrates **best practices in Data Engineering, SQL development, and Data Architecture**, making it an ideal portfolio project for showcasing hands-on technical skills.  
 
 ---
 
-## 🧱 Architecture  
-The data warehouse follows a **layered ELT architecture**, designed to progressively refine data:  
+## 🏗️ Data Architecture  
+
+The data architecture follows the **Medallion (Bronze–Silver–Gold) Architecture**, widely used in modern data engineering workflows:  
 
 | Layer | Description |
 |--------|-------------|
-| **Bronze** | Raw data ingestion layer — captures data as-is from source systems. |
-| **Silver** | Cleansed and standardized layer — applies data quality rules, normalization, and relational integrity. |
-| **Gold** | Analytical layer — aggregates and models data into **fact** and **dimension** views optimized for insights. |
+| **Bronze Layer** | Stores raw property, sales, client, and agent data ingested from CSV files into MySQL. Data is captured *as-is* from the source systems. |
+| **Silver Layer** | Performs data cleansing, standardization, and relationship enforcement through primary and foreign key constraints. This layer ensures data consistency and integrity. |
+| **Gold Layer** | Delivers analytical, business-ready views in a **dimensional model (fact and dimension)** format — optimized for insights and reporting. |
 
 ---
 
-## ⚙️ Project Objectives  
-- Establish a **clean database architecture** for real estate data.  
-- Design and implement **SQL-based ETL transformations**.  
-- Build **fact and dimension views** for analytical reporting.  
-- Demonstrate **data modeling, referential integrity, and standardization** techniques.  
+## 📖 Project Overview  
+
+This project demonstrates the end-to-end process of building a **real estate analytics warehouse**, focusing on structured SQL data pipelines and dimensional modeling.  
+
+**Key Components Include:**  
+- **Data Architecture:** Implementing a layered Medallion Architecture in MySQL.  
+- **ETL Processing:** Extracting, transforming, and loading real estate datasets into the warehouse.  
+- **Data Modeling:** Designing fact and dimension tables to support business analytics.  
+- **SQL Analytics & Reporting:** Creating analytical views for sales trends, property distribution, and agent performance.  
 
 ---
 
-## 🗂️ Database Design  
+## 🎯 Project Objectives  
 
-### Schemas
-- **bronze** – stores raw data tables.  
-- **silver** – stores cleaned, relational data with foreign key constraints.  
-- **gold** – contains analytical views (fact and dimension tables).  
-
-### Core Entities
-- **Agents** – agent details and agencies.  
-- **Clients** – client information.  
-- **Properties** – property attributes and prices.  
-- **Sales** – property transactions.  
-- **Locations** – regional demographic data.
+- Build a scalable **SQL-based data warehouse** using the Medallion architecture.  
+- Integrate and clean datasets related to properties, agents, clients, sales, and locations.  
+- Develop **analytical SQL views** for fact and dimension models.  
+- Support decision-making with **data-driven insights** into property and sales performance.  
 
 ---
 
-## 📊 Analytical Views (Gold Layer)  
+## 🧠 Key Skills Demonstrated  
 
-### `gold.dim_properties`  
-Provides enriched property information by joining property, agent, and location data.  
-Includes attributes such as address, price, property type, median income, and population.  
-
-### `gold.fact_sales_agents_clients`  
-Combines sales data with agent and client information for performance analysis.  
-Useful for understanding sales trends, agent activity, and client behavior.  
-
----
-
-## 🧠 Key Learnings  
-- Data warehouse design using **SQL and dimensional modeling**.  
-- Implementation of **Bronze–Silver–Gold data architecture**.  
-- Application of **COALESCE, JOINs, foreign keys, and view creation** for ETL.  
-- Reinforcement of **data governance principles** through schema separation and constraints.  
+- **SQL Development** — Complex joins, constraints, and view creation.  
+- **Data Modeling** — Implementation of dimensional models (facts & dimensions).  
+- **Data Engineering** — Structured ETL workflows and schema design.  
+- **Data Governance** — Enforcing referential integrity and standardized naming.  
+- **Analytics** — Transforming raw data into business-ready insights.  
 
 ---
 
 ## 🧰 Tech Stack  
+
 - **Database:** MySQL  
 - **Language:** SQL  
 - **Tools:** MySQL Workbench / DBeaver  
 - **Architecture:** Bronze → Silver → Gold  
 
 ---
-   ```bash
-   git clone https://github.com/<your-username>/sql-real-estate-data-warehouse.git
+
