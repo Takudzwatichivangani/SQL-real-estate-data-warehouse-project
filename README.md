@@ -49,6 +49,21 @@ This project demonstrates the end-to-end process of building a **real estate ana
 - **Analytics** — Transforming raw data into business-ready insights.  
 
 ---
+## 📊 BI: Analytics & Reporting (Data Analysis)
+
+**Objective**  
+Develop SQL-based analytics and reporting views to uncover key insights from the Real Estate Data Warehouse, empowering data-driven decision-making and performance tracking.
+
+**Focus Areas**  
+
+- 🏘️ **Property Performance:** Analyze sales distribution, property types, and price trends across different cities and states.  
+- 👥 **Client Behavior:** Identify buying patterns, client-agent relationships, and customer segments.  
+- 💼 **Agent Productivity:** Evaluate agent performance through total sales value, deal volume, and client engagement metrics.  
+
+**Outcome**  
+These analytics deliver actionable insights to real estate stakeholders — from understanding regional property trends to optimizing agent strategies — supporting smarter, evidence-based business decisions.
+
+---
 
 ## 🧰 Tech Stack  
 
