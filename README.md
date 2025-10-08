@@ -1,8 +1,6 @@
 # 🏠 SQL Real Estate Data Warehouse Project  
-
-Welcome to the **SQL Real Estate Data Warehouse Project!** 🚀  
-This project showcases the complete design and implementation of a **modern data warehouse** for real estate analytics — from raw data ingestion to analytical modeling and reporting.  
-It demonstrates **best practices in Data Engineering, SQL development, and Data Architecture**, making it an ideal portfolio project for showcasing hands-on technical skills.  
+  
+This project showcases the complete design and implementation of a **modern data warehouse** for real estate analytics — from raw data ingestion to analytical modeling and reporting. 
 
 ---
 
