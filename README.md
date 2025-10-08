@@ -8,7 +8,10 @@ It demonstrates **best practices in Data Engineering, SQL development, and Data 
 
 ## 🏗️ Data Architecture  
 
-The data architecture follows the **Medallion (Bronze–Silver–Gold) Architecture**, widely used in modern data engineering workflows:  
+The data architecture follows the **Medallion (Bronze–Silver–Gold) Architecture**, widely used in modern data engineering workflows: 
+
+![Alt text](Docs/Data_Architecture.png)
+
 
 | Layer | Description |
 |--------|-------------|
