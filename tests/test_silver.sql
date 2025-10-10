@@ -22,102 +22,119 @@ USE silver;
 SELECT * FROM silver.agents;
 -- Checking for Duplicate vales
 
-SELECT AgentID, COUNT(*) AS DuplicateCount
+SELECT agent_id, COUNT(*) AS DuplicateCount
 FROM silver.agents
-GROUP BY AgentID
+GROUP BY agent_id
 HAVING COUNT(*) > 1;
 
 -- Checking for unwanted spaces
 SELECT * 
 FROM silver.agents
-WHERE FirstName <> trim(FirstName);
+WHERE agent_name <> trim(agent_name);
 
 
 -- Standardization & Consistency
 -- Checking for NULL and Blank Values
 SELECT Count(*)
 FROM silver.agents
-WHERE AgentID IS NULL
-OR FirstName IS NULL
-OR Surname IS NULL
-OR Agency IS NULL;
+WHERE agent_id IS NULL
+OR agent_name IS NULL
+OR agency IS NULL;
 
 SELECT *
 FROM silver.agents
-WHERE AgentID IS NULL
-   OR FirstName IS NULL
-   OR Surname IS NULL
-   OR Agency IS NULL;
+WHERE agent_id IS NULL
+   OR agent_name IS NULL
+   OR agency IS NULL;
    
 SELECT Count(*)
 FROM silver.agents
-WHERE FirstName = '' OR Surname = '' OR Agency = '';
+WHERE agent_name = '' OR agency = '';
 
 -- 2) Client
 
+SELECT * FROM silver.clients;
+
 -- Checking for Duplicate vales
 
-SELECT ClientID, COUNT(*) AS DuplicateCount
-FROM bronze.clients
-GROUP BY ClientID
+SELECT client_id, COUNT(*) AS DuplicateCount
+FROM silver.clients
+GROUP BY client_id
 HAVING COUNT(*) > 1;
 
 
 -- Checking for unwanted spaces
 
-SELECT ClientID, Client_FirstName 
+SELECT client_id, client_name 
 FROM silver.clients
-WHERE Client_FirstName <> TRIM(Client_FirstName);
+WHERE client_name <> TRIM(client_name);
+
 -- Standardization & Consistency
 -- Checking for NULL Values
 
 SELECT *
 FROM silver.clients
-WHERE ClientID IS NULL
-OR Client_FirstName IS NULL
-OR Client_Surname IS NULL;
+WHERE client_id IS NULL
+OR client_name IS NULL;
 
 SELECT COUNT(*)
 FROM silver.clients
-WHERE Client_FirstName =''
-OR Client_Surname = '';
+WHERE client_name ='';
 
 -- 3) Properties
 
+SELECT * FROM silver.properties;
+
 -- Checking for Duplicate values
 
-SELECT PropertyID, COUNT(*) AS DuplicateCount
-FROM bronze.properties
-GROUP BY PropertyID
+SELECT property_id, COUNT(*) AS DuplicateCount
+FROM silver.properties
+GROUP BY property_id
 HAVING COUNT(*) > 1;
 
 
 -- Checking for unwanted spaces
 
-SELECT PropertyID, City
+SELECT property_id, city
 FROM silver.properties
-WHERE City <> TRIM(City);
+WHERE city <> TRIM(city);
 -- Standardization & Consistency
 -- Checking for NULL Values
 
 SELECT *
 FROM silver.properties
-WHERE PropertyID IS NULL
-OR City IS NULL;
+WHERE property_id IS NULL
+OR city IS NULL;
+
+SELECT COUNT(*)
+FROM silver.properties
+WHERE TRIM(property_id) = 'N/A'
+   OR TRIM(address) = 'N/A'
+   OR TRIM(city) = 'N/A'
+   OR TRIM(state) = 'N/A'
+   OR TRIM(zipcode) = 'N/A'
+   OR TRIM(property_type) = 'N/A'
+   OR property_price = 0
+   OR property_square_feet = 0
+   OR property_bedrooms = 0
+   OR property_bathrooms = 0
+   OR TRIM(agent_id) = 'N/A';
+
+
 
 SELECT *
 FROM silver.properties
-WHERE PropertyID =''
-OR Address =''
-OR City =''
-OR State =''
-OR ZipCode =''
-OR Type =''
-OR Price =''
-OR SquareFeet =''
-OR Bedrooms =''
-OR Bathrooms =''
-OR AgentID ='';
+WHERE property_id =''
+OR address =''
+OR city =''
+OR state = ''
+OR zipcode =''
+OR property_type =''
+OR property_price =''
+OR property_square_feet =''
+OR property_bedrooms =''
+OR property_bathrooms =''
+OR agent_id ='';
 
 SELECT DISTINCT State 
 FROM silver.properties
@@ -128,9 +145,9 @@ ORDER BY State;
 -- Checking for Duplicate vales
 SELECT * FROM silver.sales;
 
-SELECT SalesID, COUNT(*) AS DuplicateCount
+SELECT sales_id, COUNT(*) AS DuplicateCount
 FROM silver.sales
-GROUP BY SalesID
+GROUP BY sales_id
 HAVING COUNT(*) > 1;
 
 
@@ -138,41 +155,41 @@ HAVING COUNT(*) > 1;
 -- Checking for NULL Values
 SELECT *
 FROM silver.sales
-WHERE SalesID IS NULL
-OR PropertyID IS NULL
-OR ClientID IS NULL
-OR SaleDate IS NULL
-OR SalePrice IS NULL;
+WHERE sales_id IS NULL
+OR property_id IS NULL
+OR client_id IS NULL
+OR sale_date IS NULL
+OR sale_price IS NULL;
 
 SELECT Count(*)
 FROM silver.sales
-WHERE SalesID = '' OR PropertyID = '' OR ClientID = ''
-OR SaleDate = '' OR SalePrice = '';
+WHERE sales_id = '' OR property_id = '' OR client_id = ''
+OR sale_date = '' OR sale_price = '';
 
 -- Checking for invalid dates
 
-SELECT SalesID, SaleDate
+SELECT sale_id, sale_date
 FROM silver.sales
 WHERE 
     -- Not valid YYYY-MM-DD
-    NOT (SaleDate REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-    OR SaleDate IS NULL
-    OR SaleDate = '';
+    NOT (sale_date REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+    OR sale_date IS NULL
+    OR sale_date = '';
     
 -- Checking for future dates
 
-  SELECT SalesID, SaleDate,
-       STR_TO_DATE(SaleDate, '%Y-%m-%d') AS ParsedDate
+  SELECT sales_id, sale_date,
+       STR_TO_DATE(sale_date, '%Y-%m-%d') AS ParsedDate
 FROM silver.sales
 WHERE (
-        STR_TO_DATE(SaleDate, '%Y-%m-%d') > CURDATE()
-     OR STR_TO_DATE(SaleDate, '%m-%d-%Y') > CURDATE()
-     OR STR_TO_DATE(SaleDate, '%d/%m/%Y') > CURDATE()
+        STR_TO_DATE(sale_date, '%Y-%m-%d') > CURDATE()
+     OR STR_TO_DATE(sale_date, '%m-%d-%Y') > CURDATE()
+     OR STR_TO_DATE(sale_date, '%d/%m/%Y') > CURDATE()
 );
 -- Checking for 0, NULL or Blank values in Sales Price
-SELECT SalesID, SalePrice
+SELECT sales_id, sale_price
 FROM silver.sales
-WHERE SalePrice <= 0 OR SalePrice IS NULL OR SalePrice = '';
+WHERE sale_price<= 0 OR sale_price IS NULL OR sale_price = '';
 
 -- 5) Locations
 
@@ -180,32 +197,35 @@ SELECT * FROM silver.locations;
 
 -- Checking for Duplicate vales
 
-SELECT ZipCode, COUNT(*) AS DuplicateCount
+SELECT zipcode, COUNT(*) AS DuplicateCount
 FROM silver.locations
-GROUP BY ZipCode
+GROUP BY zipcode
 HAVING COUNT(*) > 1;
 
 
 -- Standardization & Consistency
 
-SELECT DISTINCT State FROM silver.locations;
+SELECT state, city
+FROM silver.locations;
+
+
 -- Checking for NULL Values
 
 SELECT *
 FROM silver.locations
-WHERE ZipCode IS NULL
-OR City IS NULL
-OR State IS NULL
-OR MedianIncome IS NULL
-OR Population IS NULL;
+WHERE zipcode IS NULL
+OR city IS NULL
+OR state IS NULL
+OR median_income IS NULL
+OR population IS NULL;
 
-SELECT Count(*)
+SELECT *
 FROM silver.locations
-WHERE ZipCode = '' OR City = '' OR State = ''
-OR MedianIncome = '' OR Population = '';
+WHERE zipcode = '' OR city = '' OR state = ''
+OR median_income = '' OR population = '';
 
 -- Checking for 0, NULL or Blank values in MedianIncome
 
-SELECT ZipCode, MedianIncome
+SELECT zipcode, median_income
 FROM silver.locations
-WHERE MedianIncome <= 0 OR MedianIncome IS NULL OR MedianIncome = '';
+WHERE median_income <= 0 OR median_income IS NULL OR median_income = '';
