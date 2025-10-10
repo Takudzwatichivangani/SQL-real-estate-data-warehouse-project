@@ -6,11 +6,11 @@ Script Purpose:
     This script sets up the foundational (Bronze) layer of the Data Warehouse.  
     It drops any existing tables to ensure a clean environment and then recreates 
     the raw data tables for:
-        - Agents
-        - Clients
-        - Properties
-        - Sales
-        - Locations
+        - agents
+        - clients
+        - properties
+        - sales
+        - locations
 
     The Bronze layer serves as the landing zone for raw, unprocessed data 
     ingested from various source systems. These tables will later be transformed 
@@ -32,7 +32,7 @@ DROP TABLE IF EXISTS bronze.agents;
 DROP TABLE IF EXISTS bronze.locations;
 
 CREATE TABLE bronze.agents (
-AgentID INT,
+AgentID VARCHAR(10),
 Name VARCHAR(100),
 PhoneNumber VARCHAR(100),
 Email VARCHAR(100),
@@ -41,40 +41,40 @@ Agency VARCHAR(100)
 
 
 CREATE TABLE bronze.clients (
-ClientID INT,
-Name VARCHAR(100),
-PhoneNumber VARCHAR(100),
-Email VARCHAR(100)
+ClientID VARCHAR(12),
+Name VARCHAR(80),
+PhoneNumber VARCHAR(80),
+Email VARCHAR(80)
 );
 
 
 CREATE TABLE bronze.properties (
-    PropertyID INT,
+    PropertyID VARCHAR(10),
     Address VARCHAR(255),
     City VARCHAR(100),
     State VARCHAR(50),
     ZipCode VARCHAR(10),
     Type VARCHAR(50),
     Price DECIMAL(12,2),
-    SquareFeet INT,
-    Bedrooms INT,
-    Bathrooms INT,
-    AgentID INT
+    SquareFeet VARCHAR(10),
+    Bedrooms VARCHAR(3),
+    Bathrooms VARCHAR(3),
+    AgentID VARCHAR(10)
 );
 
 
 CREATE TABLE bronze.sales (
-SalesID INT,
-PropertyID INT,
-ClientID INT,
-AgentID INT,
+SalesID VARCHAR(10),
+PropertyID VARCHAR(10),
+ClientID VARCHAR(10),
+AgentID VARCHAR(10),
 SaleDate VARCHAR(20),
 SalePrice DECIMAL (12, 1)
 );
 
 
 CREATE TABLE bronze.locations(
-ZipCode INT,
+ZipCode VARCHAR(10),
 City VARCHAR(100),
 State VARCHAR(100),
 MedianIncome DECIMAL(12, 2),
