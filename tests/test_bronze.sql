@@ -19,7 +19,7 @@ Usage Notes:
 
 USE bronze;
 
--- 1) Agent
+-- 1) AGENT
 
 -- Checking for Duplicate vales
 SELECT * FROM bronze.agents;
@@ -27,7 +27,7 @@ SELECT * FROM bronze.agents;
 SELECT AgentID, COUNT(*) AS DuplicateCount
 FROM bronze.agents
 GROUP BY AgentID
-HAVING COUNT(*) > 1;
+HAVING COUNT(*) >1;
 
 -- Checking for unwanted spaces
 SELECT * 
@@ -50,6 +50,7 @@ WHERE AgentID = '' OR Name = '' OR Agency = '';
 -- 2) Client
 
 -- Checking for Duplicate vales
+SELECT * FROM bronze.clients;
 
 SELECT ClientID, COUNT(*) AS DuplicateCount
 FROM bronze.clients
@@ -77,6 +78,7 @@ WHERE Name ='';
 -- 3) Properties
 
 -- Checking for Duplicate values
+SELECT * FROM bronze.properties;
 
 SELECT PropertyID, COUNT(*) AS DuplicateCount
 FROM bronze.properties
@@ -158,6 +160,7 @@ WHERE (
      OR STR_TO_DATE(SaleDate, '%m-%d-%Y') > CURDATE()
      OR STR_TO_DATE(SaleDate, '%d/%m/%Y') > CURDATE()
 );
+
 -- Checking for 0, NULL or Blank values in Sales Price
 SELECT SalesID, SalePrice
 FROM bronze.sales
@@ -177,7 +180,7 @@ HAVING COUNT(*) > 1;
 
 -- Standardization & Consistency
 
-SELECT DISTINCT State FROM bronze.locations;
+SELECT DISTINCT City FROM bronze.locations;
 -- Checking for NULL Values
 SELECT *
 FROM bronze.locations
