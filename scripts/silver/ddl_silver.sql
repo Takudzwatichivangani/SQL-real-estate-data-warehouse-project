@@ -19,55 +19,56 @@ DROP TABLE IF EXISTS silver.agents;
 DROP TABLE IF EXISTS silver.locations;
 
 CREATE TABLE silver.agents (
-    AgentID INT PRIMARY KEY,
-    Agent_FirstName VARCHAR(100),
-    Agent_Surname VARCHAR(100),
-    Agency VARCHAR(100),
+    agent_id VARCHAR(10) PRIMARY KEY,
+    agent_name VARCHAR(100),
+    agent_phone_number VARCHAR(100),
+    agent_email VARCHAR(100),
+    agency VARCHAR(100),
     DateCreated DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE silver.clients (
-    ClientID INT PRIMARY KEY,
-    Client_FirstName VARCHAR(100),
-	Client_Surname VARCHAR(100),
+    client_id VARCHAR(20) PRIMARY KEY,
+    client_name VARCHAR(100),
+    client_phone_number VARCHAR(100),
+    client_email VARCHAR(100),
     DateCreated DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE silver.properties (
-    PropertyID INT PRIMARY KEY,
-    Address VARCHAR(255),
-    City VARCHAR(100),
-    State VARCHAR(50),
-    ZipCode VARCHAR(10),
-    Type VARCHAR(50),
-    Price DECIMAL(12,2),
-    SquareFeet INT,
-    Bedrooms INT,
-    Bathrooms INT,
-    AgentID INT,
+    property_id VARCHAR(10) PRIMARY KEY,
+    address VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(50),
+    zipcode VARCHAR(10),
+    property_type VARCHAR(50),
+    property_price DECIMAL(12,2),
+    property_square_feet INT,
+    property_bedrooms INT,
+    property_bathrooms INT,
+    agent_id VARCHAR(10),
     DateCreated DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (AgentID) REFERENCES silver.agents(AgentID)
+    FOREIGN KEY (agent_id) REFERENCES silver.agents(agent_id)
 );
 
 CREATE TABLE silver.sales (
-    SalesID INT PRIMARY KEY,
-    PropertyID INT,
-    ClientID INT,
-    AgentID INT,
-    SaleDate VARCHAR(20),
-    SalePrice DECIMAL(12,1),
+    sales_id VARCHAR(10) PRIMARY KEY,
+    property_id VARCHAR(10),
+    client_id VARCHAR(10),
+    agent_id VARCHAR(10),
+    sale_date VARCHAR(20),
+    sale_price DECIMAL(12,1),
     DateCreated DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (PropertyID) REFERENCES silver.properties(PropertyID),
-    FOREIGN KEY (ClientID) REFERENCES silver.clients(ClientID),
-    FOREIGN KEY (AgentID)  REFERENCES silver.agents(AgentID)
+    FOREIGN KEY (property_id) REFERENCES silver.properties(property_id),
+    FOREIGN KEY (client_id) REFERENCES silver.clients(client_id),
+    FOREIGN KEY (agent_id)  REFERENCES silver.agents(agent_id)
 );
 
 CREATE TABLE silver.locations (
-    ZipCode INT PRIMARY KEY,
-    City VARCHAR(100),
-    State VARCHAR(100),
-    MedianIncome DECIMAL(12,2),
-    Population INT,
+    zipcode INT PRIMARY KEY,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    median_income DECIMAL(12,2),
+    population INT,
     DateCreated DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
