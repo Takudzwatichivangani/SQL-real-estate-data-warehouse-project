@@ -4,7 +4,7 @@ Silver Layer ETL Stored Procedure: silver.load_silver
 ==================================================================================
 Script Purpose:
     This script defines a stored procedure responsible for loading cleansed and 
-    standardized data from the **Bronze Layer** into the **Silver Layer** tables. 
+    standardized data from the Bronze Layer into the Silver Layer tables. 
     It performs schema alignment, data deduplication, referential integrity 
     enforcement, and value standardization across entities such as agents, 
     clients, properties, sales, and locations.
@@ -21,7 +21,7 @@ Technical Workflow:
     4. Re-enables foreign key checks post-load to maintain relational consistency.
 
 Data Engineering Context:
-    This procedure represents the **Transformation and Cleansing** stage 
+    This procedure represents the Transformation and Cleansing stage 
     within a Medallion Architecture (Bronze → Silver → Gold). It ensures 
     the Silver layer serves as a clean, conformed, and analytics-ready 
     foundation for downstream modeling and business intelligence consumption.
