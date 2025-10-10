@@ -6,14 +6,14 @@ Script Purpose:
     This script defines a stored procedure responsible for loading cleansed and 
     standardized data from the **Bronze Layer** into the **Silver Layer** tables. 
     It performs schema alignment, data deduplication, referential integrity 
-    enforcement, and value standardization across entities such as Agents, 
-    Clients, Properties, Sales, and Locations.
+    enforcement, and value standardization across entities such as agents, 
+    clients, properties, sales, and locations.
 
 Technical Workflow:
     1. Disables foreign key checks to allow controlled truncation and reload.
     2. Truncates existing Silver tables to ensure a clean load.
     3. Applies data cleaning and transformation logic:
-        - Splits full names into first and last names.
+        - Removes duplicates.
         - Standardizes casing and formats for textual fields.
         - Handles nulls and missing values with placeholders (e.g., 'N/A').
         - Normalizes inconsistent state spellings using rule-based corrections.
@@ -43,43 +43,46 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE silver.agents;
 INSERT INTO silver.agents(
-    AgentID,
-    Agent_FirstName,
-    Agent_Surname,
-    Agency
+    agent_id,
+    agent_name,
+    agent_phone_number,
+    agent_email,
+    agency
 )
 SELECT 
-    AgentID,
+      AgentID,
     CASE 
-        WHEN CONCAT(
-            UPPER(LEFT(SUBSTRING_INDEX(TRIM(Name), ' ', 1), 1)),
-            LOWER(SUBSTRING(SUBSTRING_INDEX(TRIM(Name), ' ', 1), 2))
-        ) = '' THEN 'N/A'
+        WHEN TRIM(Name) = '' THEN 'N/A'
         ELSE CONCAT(
-            UPPER(LEFT(SUBSTRING_INDEX(TRIM(Name), ' ', 1), 1)),
-            LOWER(SUBSTRING(SUBSTRING_INDEX(TRIM(Name), ' ', 1), 2))
+            UPPER(LEFT(TRIM(SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', 1)), 1)),
+            LOWER(SUBSTRING(TRIM(SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', 1)), 2)),
+            ' ',
+            UPPER(LEFT(TRIM(SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', -1)), 1)),
+            LOWER(SUBSTRING(TRIM(SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', -1)), 2))
         )
-    END AS Agent_FirstName,
-    CASE
-        WHEN CONCAT(
-            UPPER(LEFT(SUBSTRING_INDEX(TRIM(Name), ' ', -1), 1)), 
-            LOWER(SUBSTRING(SUBSTRING_INDEX(TRIM(Name), ' ', -1), 2))
-        ) = '' THEN 'N/A'
-        ELSE CONCAT(
-            UPPER(LEFT(SUBSTRING_INDEX(TRIM(Name), ' ', -1), 1)), 
-            LOWER(SUBSTRING(SUBSTRING_INDEX(TRIM(Name), ' ', -1), 2))
+    END AS agent_name,
+    PhoneNumber AS agent_phone_number,
+    Email AS agent_email,
+    CASE 
+    WHEN TRIM(Agency) = '' THEN 'N/A'
+    ELSE TRIM(
+        CONCAT_WS(' ',
+            CASE WHEN SUBSTRING_INDEX(Agency, ' ', 1) <> '' 
+                THEN CONCAT(UPPER(LEFT(SUBSTRING_INDEX(Agency, ' ', 1), 1)), LOWER(SUBSTRING(SUBSTRING_INDEX(Agency, ' ', 1), 2))) 
+            END,
+            CASE WHEN (LENGTH(Agency) - LENGTH(REPLACE(Agency, ' ', ''))) >= 1 
+                THEN CONCAT(UPPER(LEFT(SUBSTRING_INDEX(SUBSTRING_INDEX(Agency, ' ', 2), ' ', -1), 1)), LOWER(SUBSTRING(SUBSTRING_INDEX(SUBSTRING_INDEX(Agency, ' ', 2), ' ', -1), 2))) 
+            END,
+            CASE WHEN (LENGTH(Agency) - LENGTH(REPLACE(Agency, ' ', ''))) >= 2 
+                THEN CONCAT(UPPER(LEFT(SUBSTRING_INDEX(SUBSTRING_INDEX(Agency, ' ', 3), ' ', -1), 1)), LOWER(SUBSTRING(SUBSTRING_INDEX(SUBSTRING_INDEX(Agency, ' ', 3), ' ', -1), 2))) 
+            END,
+            CASE WHEN (LENGTH(Agency) - LENGTH(REPLACE(Agency, ' ', ''))) >= 3 
+                THEN CONCAT(UPPER(LEFT(SUBSTRING_INDEX(SUBSTRING_INDEX(Agency, ' ', 4), ' ', -1), 1)), LOWER(SUBSTRING(SUBSTRING_INDEX(SUBSTRING_INDEX(Agency, ' ', 4), ' ', -1), 2))) 
+            END
         )
-    END AS Agent_Surname,
-    CASE
-        WHEN CONCAT(
-            UPPER(LEFT(SUBSTRING_INDEX(REPLACE(TRIM(Agency), ',', ''), ' ', 1), 1)),
-            LOWER(SUBSTRING(SUBSTRING_INDEX(REPLACE(TRIM(Agency), ',', ''), ' ', 1), 2))
-        ) = '' THEN 'N/A'
-        ELSE CONCAT(
-            UPPER(LEFT(SUBSTRING_INDEX(REPLACE(TRIM(Agency), ',', ''), ' ', 1), 1)),
-            LOWER(SUBSTRING(SUBSTRING_INDEX(REPLACE(TRIM(Agency), ',', ''), ' ', 1), 2))
-        )
-    END AS Agency
+    )
+END AS agency
+
 FROM (
     SELECT *,
         ROW_NUMBER() OVER (PARTITION BY AgentID ORDER BY AgentID) AS rn
@@ -92,126 +95,100 @@ WHERE rn = 1;
 TRUNCATE TABLE silver.clients;
 
 INSERT INTO silver.clients(
-ClientID,
-Client_FirstName,
-Client_Surname
+client_id,
+client_name,
+client_phone_number,
+client_email
 )
-SELECT ClientID,
-CASE WHEN TRIM(Name) = '' THEN 'N/A'
-ELSE
-   CONCAT(UPPER(LEFT(SUBSTRING_INDEX(TRIM(Name), ' ', 1), 1)),
-   LOWER(SUBSTRING(SUBSTRING_INDEX(TRIM(Name), ' ', 1), 2))) END AS Client_FirstName,
-   
-   CASE WHEN TRIM(Name) = '' THEN 'N/A'
-ELSE
-   CONCAT(UPPER(LEFT(SUBSTRING_INDEX(TRIM(Name), ' ', -1), 1)),
-   LOWER(SUBSTRING(SUBSTRING_INDEX(TRIM(Name), ' ', -1), 2))) END AS Client_Surname
-FROM bronze.clients;
+SELECT 
+    ClientID,
+    CASE 
+        WHEN TRIM(Name) = '' THEN 'N/A'
+        ELSE CONCAT_WS(' ',
+            CONCAT(UPPER(LEFT(TRIM(SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', 1)), 1)),
+                   LOWER(SUBSTRING(TRIM(SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', 1)), 2))),
+            CASE WHEN SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', -1) != SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', 1)
+                 THEN CONCAT(UPPER(LEFT(TRIM(SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', -1)), 1)),
+                             LOWER(SUBSTRING(TRIM(SUBSTRING_INDEX(TRIM(REPLACE(Name, '\t', ' ')), ' ', -1)), 2)))
+            END
+        )
+    END AS client_name,
+    PhoneNumber AS client_phone_number,
+    Email AS client_email
+FROM (
+    SELECT *,
+        ROW_NUMBER() OVER (PARTITION BY ClientID ORDER BY ClientID) AS rn
+    FROM bronze.clients
+) AS RankedClients
+WHERE rn = 1;
+
 
 -- 3) Properties
 
 TRUNCATE TABLE silver.properties;
 
 INSERT INTO silver.properties (
-    PropertyID,
-    Address,
-    City,
-    State,
-    ZipCode,
-    Type,
-    Price,
-    SquareFeet,
-    Bedrooms,
-    Bathrooms,
-    AgentID
+    property_id,
+    address,
+    city,
+    state,
+    zipcode,
+    property_type,
+    property_price,
+    property_square_feet,
+    property_bedrooms,
+    property_bathrooms,
+    agent_id
 )
-SELECT
-    PropertyID,
-    CASE WHEN Address IS NULL OR TRIM(Address) = '' THEN 'N/A'
-         ELSE CONCAT(UPPER(LEFT(TRIM(Address),1)), LOWER(SUBSTRING(TRIM(Address),2))) END AS Address,
-    CASE WHEN City IS NULL OR TRIM(City) = '' THEN 'Unknown'
-         ELSE CONCAT(UPPER(LEFT(TRIM(City),1)), LOWER(SUBSTRING(TRIM(City),2))) END AS City,
-     CASE 
-        WHEN State IS NULL OR TRIM(State) = '' THEN 'Unknown'
-        WHEN LOWER(TRIM(State)) IN ('aalbama','albaama') THEN 'Alabama'
-        WHEN LOWER(TRIM(State)) IN ('airzona','ariozna','arizoan') THEN 'Arizona'
-        WHEN LOWER(TRIM(State)) IN ('arkansas','arknansas','arknasas') THEN 'Arkansas'
-        WHEN LOWER(TRIM(State)) IN ('california','cailfornia','califronia') THEN 'California'
-        WHEN LOWER(TRIM(State)) IN ('colorado') THEN 'Colorado'
-        WHEN LOWER(TRIM(State)) IN ('connecticut','connecitcut') THEN 'Connecticut'
-        WHEN LOWER(TRIM(State)) IN ('delaware','delaawre','delawaer') THEN 'Delaware'
-        WHEN LOWER(TRIM(State)) IN ('nevada','envada','neavda','nevdaa','Nevaad') THEN 'Nevada'
-        WHEN LOWER(TRIM(State)) IN ('florida','flroida') THEN 'Florida'
-        WHEN LOWER(TRIM(State)) IN ('georgia','goergia') THEN 'Georgia'
-        WHEN LOWER(TRIM(State)) IN ('hawaii','hawiai','haawii','ahwaii') THEN 'Hawaii'
-        WHEN LOWER(TRIM(State)) IN ('idaho','iadho','idaoh') THEN 'Idaho'
-        WHEN LOWER(TRIM(State)) IN ('illinois','illionis','ililnois','illniois') THEN 'Illinois'
-        WHEN LOWER(TRIM(State)) IN ('missouri','misosuri','imssouri','msisouri','motnana') THEN 'Missouri'
-        WHEN LOWER(TRIM(State)) IN ('indiana') THEN 'Indiana'
-        WHEN LOWER(TRIM(State)) IN ('iowa','ioaw','iwoa') THEN 'Iowa'
-        WHEN LOWER(TRIM(State)) IN ('kansas','kanssa') THEN 'Kansas'
-        WHEN LOWER(TRIM(State)) IN ('kentucky','kenutcky') THEN 'Kentucky'
-        WHEN LOWER(TRIM(State)) IN ('louisiana','oluisiana','luoisiana') THEN 'Louisiana'
-        WHEN LOWER(TRIM(State)) IN ('maine') THEN 'Maine'
-        WHEN LOWER(TRIM(State)) IN ('maryland','maryladn','marylnad','marylnad') THEN 'Maryland'
-        WHEN LOWER(TRIM(State)) IN ('massachusetts') THEN 'Massachusetts'
-        WHEN LOWER(TRIM(State)) IN ('michigan','mihcigan') THEN 'Michigan'
-        WHEN LOWER(TRIM(State)) IN ('minnesota') THEN 'Minnesota'
-        WHEN LOWER(TRIM(State)) IN ('mississippi','missisisppi') THEN 'Mississippi'
-        WHEN LOWER(TRIM(State)) IN ('montana','mnotana','motnana') THEN 'Montana'
-        WHEN LOWER(TRIM(State)) IN ('new mexico','ne wmexico','new emxico','ne w mexico','New mxeico') THEN 'New Mexico'
-        WHEN LOWER(TRIM(State)) IN ('new hampshire','new hamphsire','new hampshier','new hamsphire','new ahmpshire') THEN 'New Hampshire'
-        WHEN LOWER(TRIM(State)) IN ('new jersey') THEN 'New Jersey'
-        WHEN LOWER(TRIM(State)) IN ('new york','new yrok','enw york','nwe york') THEN 'New York'
-        WHEN LOWER(TRIM(State)) IN ('north carolina') THEN 'North Carolina'
-        WHEN LOWER(TRIM(State)) IN ('north dakota') THEN 'North Dakota'
-        WHEN LOWER(TRIM(State)) IN ('oregon','oregno','orgeon','roegon','oergon') THEN 'Oregon'
-        WHEN LOWER(TRIM(State)) IN ('ohio') THEN 'Ohio'
-        WHEN LOWER(TRIM(State)) IN ('oklahoma','oklahoam','oklahoam') THEN 'Oklahoma'
-        WHEN LOWER(TRIM(State)) IN ('pennsylvania','pennsyvlania','pennsyvlania') THEN 'Pennsylvania'
-        WHEN LOWER(TRIM(State)) IN ('rhode island') THEN 'Rhode Island'
-        WHEN LOWER(TRIM(State)) IN ('south carolina','sotuh carolina','south caroilna') THEN 'South Carolina'
-        WHEN LOWER(TRIM(State)) IN ('south dakota','sotuh dakota') THEN 'South Dakota'
-        WHEN LOWER(TRIM(State)) IN ('tennessee') THEN 'Tennessee'
-        WHEN LOWER(TRIM(State)) IN ('texas') THEN 'Texas'
-        WHEN LOWER(TRIM(State)) IN ('utah','tuah','uath') THEN 'Utah'
-        WHEN LOWER(TRIM(State)) IN ('vermont') THEN 'Vermont'
-        WHEN LOWER(TRIM(State)) IN ('virginia') THEN 'Virginia'
-        WHEN LOWER(TRIM(State)) IN ('nberaska') THEN 'Nebraska'
-        WHEN LOWER(TRIM(State)) IN ('washington') THEN 'Washington'
-        WHEN LOWER(TRIM(State)) IN ('west virginia','wets virginia','wes tvirginia') THEN 'West Virginia'
-        WHEN LOWER(TRIM(State)) IN ('wisconsin','wiscosnin') THEN 'Wisconsin'
-        WHEN LOWER(TRIM(State)) IN ('wyoming','woyming','wyomign') THEN 'Wyoming'
-        ELSE CONCAT(UPPER(LEFT(TRIM(State),1)), LOWER(SUBSTRING(TRIM(State),2)))
-    END AS State,
-    CASE WHEN ZipCode IS NULL OR TRIM(ZipCode) = '' THEN '00000'
-         ELSE ZipCode END AS ZipCode,
-    CASE WHEN Type IS NULL OR TRIM(Type) = '' THEN 'Other'
-         ELSE CONCAT(UPPER(LEFT(TRIM(Type),1)), LOWER(SUBSTRING(TRIM(Type),2))) END AS Type,
-    CASE WHEN Price REGEXP '^[0-9]+(\.[0-9]+)?$' THEN Price ELSE NULL END AS Price,
-    CASE WHEN SquareFeet REGEXP '^[0-9]+$' THEN SquareFeet ELSE NULL END AS SquareFeet,
-    CASE WHEN Bedrooms REGEXP '^[0-9]+$' THEN Bedrooms ELSE NULL END AS Bedrooms,
-    CASE WHEN Bathrooms REGEXP '^[0-9]+$' THEN Bathrooms ELSE NULL END AS Bathrooms,
-    CASE WHEN AgentID REGEXP '^[0-9]+$' THEN AgentID ELSE NULL END AS AgentID
-FROM (
-    SELECT *,
-           ROW_NUMBER() OVER (PARTITION BY PropertyID ORDER BY PropertyID) AS rn
-    FROM bronze.properties
-) AS RankedProps
-WHERE rn = 1
-  AND PropertyID IS NOT NULL;
+SELECT 
+    TRIM(PropertyID) AS property_id,
+    CASE WHEN TRIM(Address) = '' THEN 'N/A' ELSE TRIM(Address) END AS address,
+    CASE 
+        WHEN TRIM(City) = '' THEN 'N/A'
+        ELSE CONCAT(
+            UPPER(LEFT(TRIM(SUBSTRING_INDEX(City, ' ', 1)), 1)),
+            LOWER(SUBSTRING(TRIM(SUBSTRING_INDEX(City, ' ', 1)), 2)),
+            IF(INSTR(TRIM(City), ' ') > 0, 
+               CONCAT(' ', UPPER(LEFT(TRIM(SUBSTRING_INDEX(City, ' ', -1)), 1)), 
+                         LOWER(SUBSTRING(TRIM(SUBSTRING_INDEX(City, ' ', -1)), 2))), '')
+        )
+    END AS city,
+    TRIM(State) AS state,
+    CASE WHEN TRIM(ZipCode) = '' THEN 'N/A' ELSE TRIM(ZipCode) END AS zipcode,
+    CASE WHEN TRIM(Type) = '' THEN 'N/A' ELSE CONCAT(UPPER(LEFT(Type,1)), LOWER(SUBSTRING(Type,2))) END AS property_type,
+    COALESCE(Price, 0) AS property_price,
+    CASE 
+    WHEN SquareFeet IS NULL OR REPLACE(TRIM(SquareFeet), '\t', '') = '' 
+        THEN 0 
+    ELSE CAST(REPLACE(TRIM(SquareFeet), '\t', '') AS UNSIGNED) 
+END AS property_square_feet,
+
+CASE 
+    WHEN Bedrooms IS NULL OR REPLACE(TRIM(Bedrooms), '\t', '') = '' 
+        THEN 0 
+    ELSE CAST(REPLACE(TRIM(Bedrooms), '\t', '') AS UNSIGNED) 
+END AS property_bedrooms,
+
+CASE 
+    WHEN Bathrooms IS NULL OR REPLACE(TRIM(Bathrooms), '\t', '') = '' 
+        THEN 0 
+    ELSE CAST(REPLACE(TRIM(Bathrooms), '\t', '') AS UNSIGNED) 
+END AS property_bathrooms,
+
+    CASE WHEN TRIM(AgentID) = '' THEN 'N/A' ELSE TRIM(AgentID) END AS agent_id
+FROM bronze.properties;
 
 -- 4) SALES
 
 TRUNCATE TABLE silver.sales;
 
 INSERT INTO silver.sales(
-SalesID,
-PropertyID,
-ClientID,
-AgentID,
-SaleDate,
-SalePrice
+sales_id,
+property_id,
+client_id,
+agent_id,
+sale_date,
+sale_price
 )
 SELECT 
     SalesID,
@@ -219,15 +196,12 @@ SELECT
     ClientID,
     AgentID,
     CASE
-        WHEN CAST(SaleDate AS CHAR) LIKE '____-__-__' 
-             THEN STR_TO_DATE(SaleDate, '%Y-%m-%d')
-        WHEN CAST(SaleDate AS CHAR) LIKE '%-%-%' AND LENGTH(SaleDate) = 10 
-             THEN STR_TO_DATE(SaleDate, '%m-%d-%Y')
-        WHEN CAST(SaleDate AS CHAR) LIKE '%/%/%' 
-             THEN STR_TO_DATE(SaleDate, '%d/%m/%Y')
+        WHEN CAST(SaleDate AS CHAR) LIKE '____-__-__' THEN STR_TO_DATE(SaleDate, '%Y-%m-%d')
+        WHEN CAST(SaleDate AS CHAR) LIKE '%-%-%' AND LENGTH(SaleDate) = 10 THEN STR_TO_DATE(SaleDate, '%m-%d-%Y')
+        WHEN CAST(SaleDate AS CHAR) LIKE '%/%/%' THEN STR_TO_DATE(SaleDate, '%m/%d/%Y')
         ELSE NULL
-    END AS SaleDate,
-    NULLIF(TRIM(SalePrice), '') AS SalePrice
+    END AS sale_date,
+    NULLIF(TRIM(SalePrice), '') AS sale_price
 FROM bronze.sales;
 
 -- 5) Locations
@@ -235,78 +209,38 @@ FROM bronze.sales;
 TRUNCATE TABLE silver.locations;
 
 INSERT INTO silver.locations (
-    ZipCode,
-    City,
-    State,
-    MedianIncome,
-    Population
+    zipcode,
+    city,
+    state,
+    median_income,
+    population
 )
 SELECT
-    ZipCode,
-    CASE 
-        WHEN TRIM(City) = '' OR City IS NULL THEN 'N/A'
-        ELSE CONCAT(
-            UPPER(LEFT(TRIM(REPLACE(City, '  ', ' ')), 1)), 
-            LOWER(SUBSTRING(TRIM(REPLACE(City, '  ', ' ')), 2))
+    ZipCode AS zipcode,
+     CASE
+        WHEN REPLACE(TRIM(City), '\t', '') = '' OR City IS NULL THEN
+            CASE State
+                WHEN 'NY' THEN 'New York'
+                WHEN 'MO' THEN 'Kansas City'
+                WHEN 'CA' THEN 'Sacramento'
+                WHEN 'WA' THEN 'Seattle'
+                ELSE 'N/A'
+            END
+        ELSE CONCAT_WS(' ',
+            CONCAT(UPPER(LEFT(SUBSTRING_INDEX(TRIM(REPLACE(City, '\t', ' ')), ' ', 1), 1)),
+                   LOWER(SUBSTRING(SUBSTRING_INDEX(TRIM(REPLACE(City, '\t', ' ')), ' ', 1), 2))),
+            CASE 
+                WHEN SUBSTRING_INDEX(TRIM(REPLACE(City, '\t', ' ')), ' ', -1) != SUBSTRING_INDEX(TRIM(REPLACE(City, '\t', ' ')), ' ', 1)
+                THEN CONCAT(UPPER(LEFT(SUBSTRING_INDEX(TRIM(REPLACE(City, '\t', ' ')), ' ', -1), 1)),
+                            LOWER(SUBSTRING(SUBSTRING_INDEX(TRIM(REPLACE(City, '\t', ' ')), ' ', -1), 2)))
+            END
         )
-    END AS City,
-    CASE 
-    WHEN TRIM(State) = '' OR State IS NULL THEN 'N/A'
-    WHEN LOWER(TRIM(State)) IN ('alabaam', 'alabama') THEN 'Alabama'
-    WHEN LOWER(TRIM(State)) IN ('alaska', 'alsaka') THEN 'Alaska'
-    WHEN LOWER(TRIM(State)) IN ('arizoan', 'arizona', 'arizona', 'arizna') THEN 'Arizona'
-    WHEN LOWER(TRIM(State)) IN ('arkanass', 'arkansas', 'arkasnas') THEN 'Arkansas'
-    WHEN LOWER(TRIM(State)) IN ('california') THEN 'California'
-    WHEN LOWER(TRIM(State)) IN ('coloardo', 'colorado') THEN 'Colorado'
-    WHEN LOWER(TRIM(State)) IN ('connecticut') THEN 'Connecticut'
-    WHEN LOWER(TRIM(State)) IN ('delaware', 'dleaware', 'delawrae') THEN 'Delaware'
-    WHEN LOWER(TRIM(State)) IN ('florida') THEN 'Florida'
-    WHEN LOWER(TRIM(State)) IN ('georgia', 'goergia', 'gerogia', 'georiga', 'eorgia') THEN 'Georgia'
-    WHEN LOWER(TRIM(State)) IN ('hawaii', 'haawii') THEN 'Hawaii'
-    WHEN LOWER(TRIM(State)) IN ('idaho') THEN 'Idaho'
-    WHEN LOWER(TRIM(State)) IN ('illinois', 'illinios', 'illinosi') THEN 'Illinois'
-    WHEN LOWER(TRIM(State)) IN ('indiana', 'nidiana') THEN 'Indiana'
-    WHEN LOWER(TRIM(State)) IN ('iowa') THEN 'Iowa'
-    WHEN LOWER(TRIM(State)) IN ('kansas', 'kasnas', 'knasas') THEN 'Kansas'
-    WHEN LOWER(TRIM(State)) IN ('kentucky', 'ekntucky', 'kentucyk') THEN 'Kentucky'
-    WHEN LOWER(TRIM(State)) IN ('louisiana', 'louisinaa', 'loiusiana', 'lousiiana') THEN 'Louisiana'
-    WHEN LOWER(TRIM(State)) IN ('maine', 'miane') THEN 'Maine'
-    WHEN LOWER(TRIM(State)) IN ('maryland', 'maryladn', 'marlyand') THEN 'Maryland'
-    WHEN LOWER(TRIM(State)) IN ('massachusetts') THEN 'Massachusetts'
-    WHEN LOWER(TRIM(State)) IN ('michigan', 'michiagn') THEN 'Michigan'
-    WHEN LOWER(TRIM(State)) IN ('minnesota') THEN 'Minnesota'
-    WHEN LOWER(TRIM(State)) IN ('mississippi', 'missisisppi', 'imssissippi') THEN 'Mississippi'
-    WHEN LOWER(TRIM(State)) IN ('missouri', 'imssouri') THEN 'Missouri'
-    WHEN LOWER(TRIM(State)) IN ('montana', 'motnana', 'mnotana') THEN 'Montana'
-    WHEN LOWER(TRIM(State)) IN ('nebraska', 'enbraska', 'nberaska', 'nebraka') THEN 'Nebraska'
-    WHEN LOWER(TRIM(State)) IN ('nevada', 'nevdaa', 'neavda', 'envada') THEN 'Nevada'
-    WHEN LOWER(TRIM(State)) IN ('new hampshire', 'new ahmpshire', 'new hamsphire', 'new hamphsire') THEN 'New Hampshire'
-    WHEN LOWER(TRIM(State)) IN ('new jersey', 'new ejrsey') THEN 'New Jersey'
-    WHEN LOWER(TRIM(State)) IN ('new mexico', 'enw mexico', 'nwe mexico') THEN 'New Mexico'
-    WHEN LOWER(TRIM(State)) IN ('new york', 'nyew york') THEN 'New York'
-    WHEN LOWER(TRIM(State)) IN ('north carolina', 'north carloina', 'northc arolina') THEN 'North Carolina'
-    WHEN LOWER(TRIM(State)) IN ('north dakota') THEN 'North Dakota'
-    WHEN LOWER(TRIM(State)) IN ('ohio') THEN 'Ohio'
-    WHEN LOWER(TRIM(State)) IN ('oklahoma', 'oklahom', 'oklahoam') THEN 'Oklahoma'
-    WHEN LOWER(TRIM(State)) IN ('oregon', 'orgeon', 'oregno', 'oergon', 'roegon') THEN 'Oregon'
-    WHEN LOWER(TRIM(State)) IN ('pennsylvania', 'pennsyvlania') THEN 'Pennsylvania'
-    WHEN LOWER(TRIM(State)) IN ('rhode island', 'rhdoe island', 'rhodei sland', 'rhodoe island') THEN 'Rhode Island'
-    WHEN LOWER(TRIM(State)) IN ('south carolina', 'south carloina', 'sotuh carolina') THEN 'South Carolina'
-    WHEN LOWER(TRIM(State)) IN ('south dakota', 'sotuh dakota') THEN 'South Dakota'
-    WHEN LOWER(TRIM(State)) IN ('tennessee', 'etnnessee', 'tennesese') THEN 'Tennessee'
-    WHEN LOWER(TRIM(State)) IN ('texas', 'txeas') THEN 'Texas'
-    WHEN LOWER(TRIM(State)) IN ('utah', 'tuah') THEN 'Utah'
-    WHEN LOWER(TRIM(State)) IN ('vermont') THEN 'Vermont'
-    WHEN LOWER(TRIM(State)) IN ('virginia', 'virginai', 'ivrginia') THEN 'Virginia'
-    WHEN LOWER(TRIM(State)) IN ('washington') THEN 'Washington'
-    WHEN LOWER(TRIM(State)) IN ('west virginia', 'wes tvirginia', 'wset virginia') THEN 'West Virginia'
-    WHEN LOWER(TRIM(State)) IN ('wisconsin', 'wiscosnin') THEN 'Wisconsin'
-    WHEN LOWER(TRIM(State)) IN ('wyoming', 'woyming', 'ywoming', 'wyomign') THEN 'Wyoming'
-    ELSE CONCAT(UPPER(LEFT(TRIM(State), 1)), LOWER(SUBSTRING(TRIM(State), 2)))
-END AS State,
-	MedianIncome,
-    Population
+    END AS city,
+    State AS state,
+    MedianIncome AS median_income,
+    ROUND(Population, -3) AS population
 FROM bronze.locations;
+
 
 SET FOREIGN_KEY_CHECKS = 1;
 END$$
